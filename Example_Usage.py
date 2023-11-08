@@ -5,6 +5,7 @@ import html
 async def generate_and_retrieve_text(system_prompt, user_input, host="http://127.0.0.1:8000"):
 
     data = {
+        "LLM_Template": "Llama_2",
         "system_prompt": system_prompt,
         "prompt": user_input,
         "max_new_tokens": 512,

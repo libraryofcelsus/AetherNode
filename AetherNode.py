@@ -18,6 +18,7 @@ class Item(BaseModel):
     top_p: float = 0.95
     top_k: int = 40
     repetition_penalty: float = 1.1
+    LLM_Template: str = "Llama_2"
 
 # Initialize the queue
 request_queue = asyncio.Queue()
@@ -65,8 +66,13 @@ async def process_requests():
         request_id, item = await request_queue.get() 
         logging.info(f"Processing request: {request_id}")
         try:
+            llm_template = getattr(item, 'LLM_Template', None)
+            if llm_template:
+                delattr(item, 'LLM_Template')
             pipe = create_pipeline(item)
-            prompt_template = f"[INST] <<SYS>> {item.system_prompt} <</SYS>> {item.prompt}[/INST]"
+            prompt_template = " "
+            if llm_template == "Llama_2":
+                prompt_template = f"[INST] <<SYS>> {item.system_prompt} <</SYS>> {item.prompt} [/INST]"
             logging.info("Generating text...")
             response = pipe(prompt_template)[0]['generated_text']
             # Extract only the model's response
