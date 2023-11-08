@@ -7,6 +7,7 @@ import asyncio
 import uuid
 import logging
 import uvicorn
+import json
 
 app = FastAPI()
 
@@ -32,8 +33,11 @@ model_dir = os.path.join(base_path, "models")
 # Ensure the model directory exists
 os.makedirs(model_dir, exist_ok=True)
 
+with open('settings.json') as settings_file:
+    settings = json.load(settings_file)
+    
 # Load the model and tokenizer
-model_name_or_path = "TheBloke/Llama-2-13B-chat-GPTQ"
+model_name_or_path = settings['model_name_or_path']
 model = AutoModelForCausalLM.from_pretrained(
     model_name_or_path,
     device_map="auto",
@@ -67,12 +71,18 @@ async def process_requests():
         logging.info(f"Processing request: {request_id}")
         try:
             llm_template = getattr(item, 'LLM_Template', None)
+            username = getattr(item, 'Username', None)
+            bot_name = getattr(item, 'Bot_Name', None)
             if llm_template:
                 delattr(item, 'LLM_Template')
+            if username:
+                delattr(item, 'Username')
+            if bot_name:
+                delattr(item, 'Bot_Name')
             pipe = create_pipeline(item)
             prompt_template = " "
-            if llm_template == "Llama_2":
-                prompt_template = f"[INST] <<SYS>> {item.system_prompt} <</SYS>> {item.prompt} [/INST]"
+            if llm_template == "Llama_2_Chat":
+                prompt_template = f"[INST] <<SYS>> {username}: {item.system_prompt} <</SYS>> {bot_name}: {item.prompt} [/INST]"
             logging.info("Generating text...")
             response = pipe(prompt_template)[0]['generated_text']
             # Extract only the model's response
@@ -115,4 +125,9 @@ asyncio.create_task(process_requests())
 
 if __name__ == "__main__":
     asyncio.create_task(process_requests())
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+    host = settings['host', "0.0.0.0"]
+    port = settings['port', "8000"]
+    uvicorn.run(app, host=host, port=port)
