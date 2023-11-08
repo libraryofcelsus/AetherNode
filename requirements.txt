@@ -1,0 +1,7 @@
+tokenizers
+fastapi
+uvicorn
+pydantic
+accelerate
+asyncio
+aiohttp
