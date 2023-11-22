@@ -5,18 +5,29 @@ import html
 async def generate_and_retrieve_text(system_prompt, user_input, host="http://127.0.0.1:8000"):
 
     data = {
-        "LLM_Template": "Llama_2_Chat",
-        "Username": "USER",
-        "Bot_Name": "ASSISTANT",
-        "system_prompt": system_prompt,
-        "prompt": user_input,
-        "max_new_tokens": 512,
+        "LLM_Template": "Llama_2_Chat", 
+        # Available Templates are Llama_2_Chat and Llama_2_Chat_No_End_Token
+        "Username": "USER", 
+        # Set User's Name
+        "Bot_Name": "ASSISTANT", 
+        # Set Chatbot's Name
+        "system_prompt": system_prompt, 
+        # System Prompt/Instruction
+        "prompt": user_input, 
+        # User Input
+        "max_new_tokens": 512, 
+        # Max New Tokens for Response
         "temperature": 0.7,
+        # Temperature is the main factor in controlling the randomness of outputs. It directly effects the probability distribution of the outputs. A lower temperature will be more deterministic, while as a higher temperature will be more creative.
         "top_p": 0.95,
+        # Top_p is also known as nucleus sampling. It is an alternative to just using temperature alone in controlling the randomness of the model’s output. This setting will choose from the smallest set of tokens whose cumulative probability exceeds a threshold p. This set of tokens is referred to as the “nucleus”. It is more dynamic than “top_k” and can lead to more diverse and richer outputs, especially in cases where the model is uncertain.
         "top_k": 40,
-        "repetition_penalty": 1.1
+        # Top_k is another sampling strategy where the model first calculates probabilities for each token in its vocabulary, instead of considering the entire vocabulary as a whole. It restricts the model to only select an output from the k most likely tokens. Top_k is alot more predictable and more simple to use than top_p, but it can make the output too narrow and repetitive.
+        "repetition_penalty": 1.10,
+        # This setting will help us improve the output by reducing redundant or repetitive content. When the model is generating an output, the repetition penalty will either discourage, or encourage, repeated selection of the same tokens.
+        "truncation_length": 4096
+        # This setting will set the length of our prompt before it is cut off.
     }
-
 
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{host}/generate-text/", json=data) as post_response: # POST request to generate text
@@ -40,6 +51,9 @@ async def generate_and_retrieve_text(system_prompt, user_input, host="http://127
                 return "Max polling attempts reached. Please try again later."
             else:
                 return f"Failed to submit the prompt: {post_response.status}"
+
+
+
 
 if __name__ == "__main__":
     while True:
