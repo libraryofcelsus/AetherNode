@@ -14,3 +14,10 @@ If you need help or have any questions join my discord: https://discord.gg/pb5zc
 - Added a Settings Json
 - Added Username Parameter
 - Added Bot Name Parameter
+
+## How to Install
+- Install Python 3.10.6, Make sure you add it to PATH: https://www.python.org/downloads/release/python-3106/
+- Download the AetherNode github folder and extract it to wherever you want it installed.
+- Run windows_aethernode_installer.bat to install the requirements.
+- Run a run_aethernode.bat to download the model defined in the settings json and start the api.
+- An example script of how to call it can be found in Example_Usage.py
