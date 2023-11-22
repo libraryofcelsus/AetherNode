@@ -34,7 +34,7 @@ async def generate_and_retrieve_text(system_prompt, user_input, host="http://127
             if post_response.status == 200:
                 post_data = await post_response.json()
                 request_id = post_data['request_id']
-                print(f"Request ID: {request_id}")
+         #       print(f"Request ID: {request_id}")
                 max_attempts = 10
                 attempts = 0
                 delay_seconds = 5  # Delay between each polling attempt
