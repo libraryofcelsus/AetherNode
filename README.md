@@ -7,8 +7,10 @@ If you need help or have any questions join my discord: https://discord.gg/pb5zc
 
 
 **Changelog:**
-- Added Model Download from Hugging Face
-- Added Exllamav2
+- 11/22 Added Proper Prompt Truncation
+- 11/22 Added Proper Token Counting
+- 11/22 Added Model Download from Hugging Face
+- 11/22 Added Exllamav2
 - Added a Settings Json
 - Added Username Parameter
 - Added Bot Name Parameter

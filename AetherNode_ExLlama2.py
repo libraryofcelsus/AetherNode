@@ -25,7 +25,7 @@ class Item(BaseModel):
     truncation_length: int = 4096
     repetition_penalty: float = 1.15
     disallowed_words: List[str] = ['[INST]', '[/INST]', '[Inst]', '[/Inst]']
-    LLM_Template: str = "Llama_2"
+    LLM_Template: str = "Llama_2_Chat"
 
 request_queue = asyncio.Queue()
 result_holder = {}
@@ -83,24 +83,43 @@ async def process_requests():
             if llm_template == "Llama_2_Chat":
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
-                prompt_template_length = len(prompt_template)
+                
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
                 if prompt_template_length > item.truncation_length:
                     overhang = prompt_template_length - item.truncation_length
-                    item.prompt = item.prompt[overhang:]  
+                    truncated_input_ids = input_ids[overhang:]  
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    
+            if llm_template == "Llama_2_Chat_No_End_Token":
+                prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
+                system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
+                
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncated_input_ids = input_ids[overhang:]  
+                    item.prompt = tokenizer.decode(truncated_input_ids)
                     prompt_overhang = True
         
             settings = create_generator_settings(item)
             try:
                 response = await asyncio.wait_for(asyncio.to_thread(
                     generator.generate_simple, prompt_template, settings, item.max_new_tokens), timeout)
-                prompt_length = len(item.prompt)
+                response_ids = tokenizer.encode(response)
+                response_length = response_ids.shape[-1]
+                response_total_length = response_length - prompt_template_length
              #   response = combined_response[prompt_template_length:]
                 time_end = time.time()
                 time_total = time_end - time_begin
                 max_new_tokens = item.max_new_tokens
                 if prompt_overhang:
-                    print("Prompt Truncated due to Length")
-                print(f"Response generated in {time_total:.2f} seconds, {max_new_tokens / time_total:.2f} tokens/second. (Calculation may be wrong, work in progress.)")
+                    print(f"Prompt Truncated due to Length. {overhang} Tokens removed from beginning of the prompt.")
+                print(f"Prompt token length: {prompt_template_length}. Response Token Length: {response_total_length}.\nResponse generated in {time_total:.2f} seconds, {response_total_length / time_total:.2f} tokens/second.")
             except asyncio.TimeoutError:
                 response = "Request timed out"
                 logging.error(f"Request {request_id} timed out.")
