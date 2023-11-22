@@ -23,13 +23,13 @@ REM Uninstall auto-gptq if it was previously installed
 pip uninstall -y auto-gptq
 
 REM Clone the AutoGPTQ repository and install it
-git clone https://github.com/PanQiWei/AutoGPTQ
+git clone https://github.com/libraryofcelsus/AutoGPTQ
 cd AutoGPTQ
 pip install .
 
 cd ..
 
-git clone https://github.com/turboderp/exllamav2
+git clone https://github.com/libraryofcelsus/exllamav2
 cd exllamav2
 pip install .
 
