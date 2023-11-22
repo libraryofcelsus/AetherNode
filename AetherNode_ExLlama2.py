@@ -31,7 +31,12 @@ request_queue = asyncio.Queue()
 result_holder = {}
 processing_events = {}
 
-model_directory = "./models/TheBloke_Llama-2-13B-chat-GPTQ"
+with open('settings.json') as settings_file:
+    settings = json.load(settings_file)
+    
+model_name_or_path = settings['model_name_or_path']
+formatted_model_name = model_name_or_path.replace('/', '_')
+model_directory = f"./models/{formatted_model_name}"
 config = ExLlamaV2Config()
 config.model_dir = model_directory
 config.prepare()

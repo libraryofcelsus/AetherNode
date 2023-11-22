@@ -1,5 +1,5 @@
 {
     "model_name_or_path": "TheBloke/Llama-2-13B-chat-GPTQ",
-	"host": "0.0.0.0",
+	"host": "127.0.0.1",
 	"port": "8000"
 }
