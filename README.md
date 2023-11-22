@@ -21,3 +21,4 @@ If you need help or have any questions join my discord: https://discord.gg/pb5zc
 - Run windows_aethernode_installer.bat to install the requirements.
 - Run a run_aethernode.bat to download the model defined in the settings json and start the api.
 - An example script of how to call it can be found in Example_Usage.py
+- To use it with a public host, set "Use_Public_Host" in the settings json to true, then use the given ngrok url as the host instead of the localhost and port.
