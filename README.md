@@ -7,6 +7,7 @@ If you need help or have any questions join my discord: https://discord.gg/pb5zc
 
 
 **Changelog:**
+- 11/23 Added Google Colab
 - 11/23 Changed Truncation to not effect system prompt for exllamav2 version
 - 11/22 Added Public Url Option in settings using ngrok
 - 11/22 Added Proper Prompt Truncation
