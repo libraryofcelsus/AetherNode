@@ -5,6 +5,10 @@ This Repository is mostly just an experiment for now.  I may end up using this a
 
 If you need help or have any questions join my discord: https://discord.gg/pb5zcNa7zE
 
+Run in Google Colab: <a target="_blank" href="https://colab.research.google.com/github/libraryofcelsus/Aetherius_AI_Assistant/blob/main/Colab%20Notebooks/AetherNode_Public_Api.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
 
 **Changelog:**
 - 11/23 Added Google Colab
