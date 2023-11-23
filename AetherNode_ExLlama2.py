@@ -67,7 +67,9 @@ async def process_requests():
         logging.info(f"Processing request: {request_id}")
         try:
             time_begin = time.time()
-            
+            truncation_length = getattr(item, 'truncation_length', None)
+            max_new_tokens = getattr(item, 'max_new_tokens', None)
+            truncation_length = truncation_length - max_new_tokens
             llm_template = getattr(item, 'LLM_Template', None)
             username = getattr(item, 'Username', None)
             bot_name = getattr(item, 'Bot_Name', None)
@@ -84,39 +86,48 @@ async def process_requests():
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
                 
-                input_ids = tokenizer.encode(prompt_template)
+                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
                     overhang = prompt_template_length - item.truncation_length
-                    truncated_input_ids = input_ids[overhang:]  
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
                     item.prompt = tokenizer.decode(truncated_input_ids)
                     prompt_overhang = True
+                    prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
+                    system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
+                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    prompt_template_length = input_ids.shape[-1]
                     
             if llm_template == "Llama_2_Chat_No_End_Token":
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
                 
-                input_ids = tokenizer.encode(prompt_template)
+                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
                     overhang = prompt_template_length - item.truncation_length
-                    truncated_input_ids = input_ids[overhang:]  
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
                     item.prompt = tokenizer.decode(truncated_input_ids)
                     prompt_overhang = True
+                    prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
+                    system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
+                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    prompt_template_length = input_ids.shape[-1]
         
             settings = create_generator_settings(item)
             try:
                 response = await asyncio.wait_for(asyncio.to_thread(
                     generator.generate_simple, prompt_template, settings, item.max_new_tokens), timeout)
-                response_ids = tokenizer.encode(response)
+                response_ids = tokenizer.encode(response, encode_special_tokens=True)
                 response_length = response_ids.shape[-1]
                 response_total_length = response_length - prompt_template_length
              #   response = combined_response[prompt_template_length:]
                 time_end = time.time()
                 time_total = time_end - time_begin
-                max_new_tokens = item.max_new_tokens
                 if prompt_overhang:
                     print(f"Prompt Truncated due to Length. {overhang} Tokens removed from beginning of the prompt.")
                 print(f"Prompt token length: {prompt_template_length}. Response Token Length: {response_total_length}.\nResponse generated in {time_total:.2f} seconds, {response_total_length / time_total:.2f} tokens/second.")
