@@ -79,6 +79,10 @@ async def process_requests():
             username = getattr(item, 'Username', None)
             bot_name = getattr(item, 'Bot_Name', None)
             truncation_length = getattr(item, 'Truncation_Length', None)
+            with open('settings.json') as settings_file:
+                settings = json.load(settings_file)
+                
+            Use_Injection = settings['Use_Injection_Prompt']
             if llm_template:
                 delattr(item, 'LLM_Template')
             if username:
@@ -90,6 +94,10 @@ async def process_requests():
             pipe = create_pipeline(item)
             prompt_template = " "   
             prompt_overhang = False   
+            if Use_Injection == "True":
+                with open('Injection_Prompt.txt', 'r') as file:
+                    Injection_Prompt = file.read()
+                item.prompt = f"{Injection_Prompt}\n{item.prompt}"
                 
             if llm_template == "Llama_2_Chat":
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"

@@ -30,5 +30,3 @@ if "%Use_Public_Api%"=="True" (
     echo Public API not enabled. Running locally only.
 )
 
-
-pause
