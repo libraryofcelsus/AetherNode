@@ -1,18 +1,13 @@
 # AetherNode
 A Simple Local API for Open-Source LLMs.  Only Llama-2-Chat for now.
 
-This Repository was made for my Ai Assistant Agent Project.  
-That project can be found here: https://github.com/libraryofcelsus/Aetherius_AI_Assistant
+This Repository is mostly just an experiment for now.  I may end up using this as a solution for my Ai Assistant/Agent project.  That project can be found here: https://github.com/libraryofcelsus/Aetherius_AI_Assistant
 
 If you need help or have any questions join my discord: https://discord.gg/pb5zcNa7zE
 
-Run in Google Colab: <a target="_blank" href="https://colab.research.google.com/github/libraryofcelsus/Aetherius_AI_Assistant/blob/main/Colab%20Notebooks/AetherNode_Public_Api.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
-
 
 **Changelog:**
-- 11/23 Added Google Colab
+- 11/27 Added an Injection Prompt option that will inject a prompt before every system prompt for all calls.
 - 11/23 Changed Truncation to not effect system prompt for exllamav2 version
 - 11/22 Added Public Url Option in settings using ngrok
 - 11/22 Added Proper Prompt Truncation

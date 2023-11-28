@@ -65,6 +65,10 @@ async def process_requests():
         logging.info("Waiting for the next request...")
         request_id, item = await request_queue.get()
         logging.info(f"Processing request: {request_id}")
+        with open('settings.json') as settings_file:
+            settings = json.load(settings_file)
+            
+        Use_Injection = settings['Use_Injection_Prompt']
         try:
             time_begin = time.time()
             truncation_length = getattr(item, 'truncation_length', None)
@@ -82,10 +86,13 @@ async def process_requests():
                 delattr(item, 'Bot_Name')
             prompt_template = " "
             prompt_overhang = False
+            if Use_Injection == "True":
+                with open('Injection_Prompt.txt', 'r') as file:
+                    Injection_Prompt = file.read()
+                item.prompt = f"{Injection_Prompt}\n{item.prompt}"
             if llm_template == "Llama_2_Chat":
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
-                
                 input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
                 prompt_template_length = input_ids.shape[-1]
                 

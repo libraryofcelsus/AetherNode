@@ -1,5 +1,6 @@
 {
     "model_name_or_path": "TheBloke/Llama-2-13B-chat-GPTQ",
+	"Use_Injection_Prompt": "False",
 	"host": "127.0.0.1",
 	"port": "8000",
 	"Use_Public_API": "False"
