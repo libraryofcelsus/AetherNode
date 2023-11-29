@@ -11,6 +11,7 @@ import time
 from typing import List
 from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache, ExLlamaV2Tokenizer
 from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
+import torch
 
 app = FastAPI()
 
@@ -42,7 +43,22 @@ config.model_dir = model_directory
 config.prepare()
 model = ExLlamaV2(config)
 cache = ExLlamaV2Cache(model, lazy=True)
-model.load_autosplit(cache)
+
+with open('settings.json', 'r') as file:
+    settings = json.load(file)
+max_vram_gb = settings.get("Max_VRAM_GB", None)
+Auto_Allocate_Resources = settings.get("Auto_Allocate_Resources", "True")
+if Auto_Allocate_Resources == "False":
+    if max_vram_gb is not None:
+        max_vram_mb = max_vram_gb * 1024
+        num_splits = torch.cuda.device_count()
+        vram_per_split = max_vram_mb // num_splits
+        gpu_split = [vram_per_split] * num_splits
+    else:
+        gpu_split = None 
+    model.load_autosplit(cache=cache, reserve_vram=gpu_split)
+else:
+    model.load_autosplit(cache=cache)
 tokenizer = ExLlamaV2Tokenizer(config)
 generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
 generator.warmup()
@@ -131,7 +147,7 @@ async def process_requests():
         
     # Alpaca Format
             if llm_template == "Alpaca":
-                end_token = "### Response:"
+                end_token = "\n\n### Response:"
                 prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
                 system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
                 input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
@@ -149,7 +165,7 @@ async def process_requests():
                     prompt_template_length = input_ids.shape[-1]
         
             if llm_template == "Alpaca_No_End_Token":
-                end_token = "### Response:"
+                end_token = "\n\n### Response:"
                 prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
                 system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
                 input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)

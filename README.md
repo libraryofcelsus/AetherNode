@@ -7,6 +7,7 @@ If you need help or have any questions join my discord: https://discord.gg/pb5zc
 
 
 **Changelog:**
+- 11/29 Added Option to set max vram with Exllamav2
 - 11/28 Added Alpaca Formating
 - 11/27 Added an Injection Prompt option that will inject a prompt before every system prompt for all calls.
 - 11/23 Changed Truncation to not effect system prompt for exllamav2 version
