@@ -6,7 +6,9 @@ async def generate_and_retrieve_text(system_prompt, user_input, host="http://127
 
     data = {
         "LLM_Template": "Llama_2_Chat", 
-        # Available Templates are Llama_2_Chat and Llama_2_Chat_No_End_Token
+        # Available Templates are: 
+        # Llama_2_Chat and Llama_2_Chat_No_End_Token
+        # Alpaca and Alpaca_No_End_Token
         "Username": "USER", 
         # Set User's Name
         "Bot_Name": "ASSISTANT", 
@@ -25,8 +27,11 @@ async def generate_and_retrieve_text(system_prompt, user_input, host="http://127
         # Top_k is another sampling strategy where the model first calculates probabilities for each token in its vocabulary, instead of considering the entire vocabulary as a whole. It restricts the model to only select an output from the k most likely tokens. Top_k is alot more predictable and more simple to use than top_p, but it can make the output too narrow and repetitive.
         "repetition_penalty": 1.10,
         # This setting will help us improve the output by reducing redundant or repetitive content. When the model is generating an output, the repetition penalty will either discourage, or encourage, repeated selection of the same tokens.
-        "truncation_length": 4096
+        "truncation_length": 4096,
         # This setting will set the length of our prompt before it is cut off.
+        "disallowed_words": ['[INST]', '[/INST]', '[Inst]', '[/Inst]']
+        # For Llama_2_Chat use: '[INST]', '[/INST]', '[Inst]', '[/Inst]'
+        # Fore Alpaca use: '### Response'
     }
 
     async with aiohttp.ClientSession() as session:
