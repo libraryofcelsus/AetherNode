@@ -126,6 +126,33 @@ async def process_requests():
                     prompt_overhang = True
                 
                 
+    # Alpaca Format   
+            if llm_template == "Alpaca":
+                prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
+                system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
+                
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = len(input_ids)
+                
+                if prompt_template_length > truncation_length:
+                    overhang = prompt_template_length - truncation_length
+                    truncated_input_ids = input_ids[overhang:]  
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+        
+                
+            if llm_template == "Alpaca_No_End_Token":
+                prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
+                system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
+                
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = len(input_ids)
+                
+                if prompt_template_length > truncation_length:
+                    overhang = prompt_template_length - truncation_length
+                    truncated_input_ids = input_ids[overhang:]  
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
                 
                 
                 

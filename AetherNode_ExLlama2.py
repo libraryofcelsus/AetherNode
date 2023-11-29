@@ -77,7 +77,6 @@ async def process_requests():
             llm_template = getattr(item, 'LLM_Template', None)
             username = getattr(item, 'Username', None)
             bot_name = getattr(item, 'Bot_Name', None)
-            end_token = "[/INST]"
             if llm_template:
                 delattr(item, 'LLM_Template')
             if username:
@@ -90,7 +89,10 @@ async def process_requests():
                 with open('Injection_Prompt.txt', 'r') as file:
                     Injection_Prompt = file.read()
                 item.prompt = f"{Injection_Prompt}\n{item.prompt}"
+                
+    # Llama-2-Chat Format    
             if llm_template == "Llama_2_Chat":
+                end_token = "[/INST]"
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
                 input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
@@ -108,6 +110,7 @@ async def process_requests():
                     prompt_template_length = input_ids.shape[-1]
                     
             if llm_template == "Llama_2_Chat_No_End_Token":
+                end_token = "[/INST]"
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
                 
@@ -124,6 +127,49 @@ async def process_requests():
                     system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
                     input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
                     prompt_template_length = input_ids.shape[-1]
+        
+        
+    # Alpaca Format
+            if llm_template == "Alpaca":
+                end_token = "### Response:"
+                prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
+                system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
+                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
+                    system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
+                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    prompt_template_length = input_ids.shape[-1]
+        
+            if llm_template == "Alpaca_No_End_Token":
+                end_token = "### Response:"
+                prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
+                system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
+                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
+                    system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
+                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    prompt_template_length = input_ids.shape[-1]
+        
+        
+        
+        
+        
         
             settings = create_generator_settings(item)
             try:
