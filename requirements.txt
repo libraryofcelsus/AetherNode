@@ -4,3 +4,4 @@ pydantic==2.5.1
 accelerate==0.24.1
 asyncio==3.4.3
 aiohttp==3.9.0
+pyngrok==7.0.1

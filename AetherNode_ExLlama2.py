@@ -12,6 +12,8 @@ from typing import List
 from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache, ExLlamaV2Tokenizer
 from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
 import torch
+from pyngrok import ngrok
+import uvicorn
 
 app = FastAPI()
 
@@ -259,10 +261,17 @@ if __name__ == "__main__":
         settings = json.load(settings_file)
     host = settings.get('host', "127.0.0.1")
     port = settings.get('port', 8000)
+    use_public_api = settings.get('Use_Public_API', "False")
+    
+  #  if use_public_api == "True":
+    # Open a ngrok tunnel to the server
+    public_url = ngrok.connect(port, bind_tls=True).public_url
+    print(f" * ngrok tunnel \"{public_url}\" -> \"http://{host}:{port}\"")
 
     # Run Uvicorn with asyncio event loop
-    import uvicorn
-    log_config = uvicorn.config.LOGGING_CONFIG
-    log_config["loggers"]["uvicorn"]["level"] = "INFO"
-    uvicorn.run(app, host=host, port=port, log_config=log_config)
+    uvicorn.run(app, host=host, port=port, log_level="info")
+  #  else:
+
+   #     uvicorn.run(app, host=host, port=port)
+   # 
 
