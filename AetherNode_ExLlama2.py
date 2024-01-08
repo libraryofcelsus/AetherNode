@@ -12,8 +12,6 @@ from typing import List
 from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache, ExLlamaV2Tokenizer
 from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
 import torch
-from pyngrok import ngrok
-import uvicorn
 
 app = FastAPI()
 
@@ -27,7 +25,6 @@ class Item(BaseModel):
     top_k: int = 40
     truncation_length: int = 4096
     repetition_penalty: float = 1.15
-    disallowed_words: List[str] = ['[INST]', '[/INST]', '[Inst]', '[/Inst]']
     LLM_Template: str = "Llama_2_Chat"
 
 request_queue = asyncio.Queue()
@@ -71,10 +68,6 @@ def create_generator_settings(item):
     settings.top_k = item.top_k
     settings.top_p = item.top_p
     settings.token_repetition_penalty = item.repetition_penalty
-    disallowed_words = item.disallowed_words
-    disallowed_token_ids = [tokenizer.encode(word)[0] for word in disallowed_words]
-    for token_id in disallowed_token_ids:
-        settings.disallow_tokens(tokenizer, token_id)
     return settings
 
 async def process_requests():
@@ -91,7 +84,7 @@ async def process_requests():
             time_begin = time.time()
             truncation_length = getattr(item, 'truncation_length', None)
             max_new_tokens = getattr(item, 'max_new_tokens', None)
-            truncation_length = truncation_length - max_new_tokens
+        #    truncation_length = truncation_length - max_new_tokens
             llm_template = getattr(item, 'LLM_Template', None)
             username = getattr(item, 'Username', None)
             bot_name = getattr(item, 'Bot_Name', None)
@@ -113,7 +106,7 @@ async def process_requests():
                 end_token = "[/INST]"
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
-                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
@@ -124,15 +117,14 @@ async def process_requests():
                     prompt_overhang = True
                     prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
                     system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
-                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
                     
             if llm_template == "Llama_2_Chat_No_End_Token":
                 end_token = "[/INST]"
                 prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
                 system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
-                
-                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
@@ -143,7 +135,7 @@ async def process_requests():
                     prompt_overhang = True
                     prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
                     system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
-                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
         
         
@@ -152,7 +144,7 @@ async def process_requests():
                 end_token = "\n\n### Response:"
                 prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
                 system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
-                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
@@ -163,14 +155,14 @@ async def process_requests():
                     prompt_overhang = True
                     prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}\n\n### Response:"
                     system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: \n\n### Response:"
-                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
         
             if llm_template == "Alpaca_No_End_Token":
                 end_token = "\n\n### Response:"
                 prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
                 system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
-                input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
                 if prompt_template_length > item.truncation_length:
@@ -181,7 +173,7 @@ async def process_requests():
                     prompt_overhang = True
                     prompt_template = f"{item.system_prompt}\n\n### Instruction:\n{username}: {item.prompt}"
                     system_prompt_prep = f"{item.system_prompt}\n\n### Instruction:\n{username}: "
-                    input_ids = tokenizer.encode(prompt_template, encode_special_tokens=True)
+                    input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
         
         
@@ -192,10 +184,14 @@ async def process_requests():
             settings = create_generator_settings(item)
             try:
                 response = await asyncio.wait_for(asyncio.to_thread(
-                    generator.generate_simple, prompt_template, settings, item.max_new_tokens), timeout)
-                response_ids = tokenizer.encode(response, encode_special_tokens=True)
-                response_length = response_ids.shape[-1]
-                response_total_length = response_length - prompt_template_length
+                    generator.generate_simple, prompt_template, settings, item.max_new_tokens), timeout) 
+                    
+                response = response.replace(prompt_template, '')
+
+                input_ids = tokenizer.encode(response)
+                response_length = input_ids.shape[-1]
+            #    response_total_length = response_length - prompt_template_length
+                response_total_length = response_length
              #   response = combined_response[prompt_template_length:]
                 time_end = time.time()
                 time_total = time_end - time_begin
@@ -261,17 +257,10 @@ if __name__ == "__main__":
         settings = json.load(settings_file)
     host = settings.get('host', "127.0.0.1")
     port = settings.get('port', 8000)
-    use_public_api = settings.get('Use_Public_API', "False")
-    
-  #  if use_public_api == "True":
-    # Open a ngrok tunnel to the server
-    public_url = ngrok.connect(port, bind_tls=True).public_url
-    print(f" * ngrok tunnel \"{public_url}\" -> \"http://{host}:{port}\"")
 
     # Run Uvicorn with asyncio event loop
-    uvicorn.run(app, host=host, port=port, log_level="info")
-  #  else:
-
-   #     uvicorn.run(app, host=host, port=port)
-   # 
+    import uvicorn
+    log_config = uvicorn.config.LOGGING_CONFIG
+    log_config["loggers"]["uvicorn"]["level"] = "INFO"
+    uvicorn.run(app, host=host, port=port, log_config=log_config)
 
