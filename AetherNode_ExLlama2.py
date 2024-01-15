@@ -15,18 +15,6 @@ import torch
 
 app = FastAPI()
 
-class Item(BaseModel):
-    system_prompt: str = "You are a helpful, respectful, and honest assistant."
-    prompt: str
-    Username: str = "USER"
-    max_new_tokens: int = 512
-    temperature: float = 0.7
-    top_p: float = 0.45
-    top_k: int = 40
-    truncation_length: int = 4096
-    repetition_penalty: float = 1.15
-    LLM_Template: str = "Llama_2_Chat"
-
 request_queue = asyncio.Queue()
 result_holder = {}
 processing_events = {}
@@ -35,6 +23,7 @@ with open('settings.json') as settings_file:
     settings = json.load(settings_file)
     
 model_name_or_path = settings['model_name_or_path']
+trunc_length = settings.get('default_truncation_length', "4096")
 formatted_model_name = model_name_or_path.replace('/', '_')
 model_directory = f"./models/{formatted_model_name}"
 config = ExLlamaV2Config()
@@ -42,6 +31,21 @@ config.model_dir = model_directory
 config.prepare()
 model = ExLlamaV2(config)
 cache = ExLlamaV2Cache(model, lazy=True)
+
+class Item(BaseModel):
+    
+    system_prompt: str = "You are a helpful, respectful, and honest assistant."
+    prompt: str
+    Username: str = "USER"
+    max_new_tokens: int = 512
+    temperature: float = 0.7
+    top_p: float = 0.45
+    top_k: int = 40
+    truncation_length: int = int(trunc_length)
+    repetition_penalty: float = 1.15
+    LLM_Template: str = "Llama_2_Chat"
+
+
 
 with open('settings.json', 'r') as file:
     settings = json.load(file)
@@ -177,6 +181,83 @@ async def process_requests():
                     prompt_template_length = input_ids.shape[-1]
         
         
+    # Vicuna Format
+            if llm_template == "Vicuna":
+                end_token = "ASSISTANT:"
+                prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
+                system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
+                    system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
+                    input_ids = tokenizer.encode(prompt_template)
+                    prompt_template_length = input_ids.shape[-1]
+        
+            if llm_template == "Vicuna_No_End_Token":
+                end_token = "ASSISTANT:"
+                prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} "
+                system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} "
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} "
+                    system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} "
+                    input_ids = tokenizer.encode(prompt_template)
+                    prompt_template_length = input_ids.shape[-1]
+                    
+                    
+                    
+    # ChatML Format
+            if llm_template == "ChatML":
+                end_token = "<|im_end|>\n<|im_start|>assistant"
+                prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                    system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                    input_ids = tokenizer.encode(prompt_template)
+                    prompt_template_length = input_ids.shape[-1]
+        
+            if llm_template == "Vicuna_No_End_Token":
+                end_token = "<|im_end|>\n<|im_start|>assistant"
+                prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                input_ids = tokenizer.encode(prompt_template)
+                prompt_template_length = input_ids.shape[-1]
+                
+                if prompt_template_length > item.truncation_length:
+                    overhang = prompt_template_length - item.truncation_length
+                    truncation_length = item.truncation_length - len(system_prompt_prep)
+                    truncated_input_ids = input_ids[:, -truncation_length:]
+                    item.prompt = tokenizer.decode(truncated_input_ids)
+                    prompt_overhang = True
+                    prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                    system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                    input_ids = tokenizer.encode(prompt_template)
+                    prompt_template_length = input_ids.shape[-1]
+                    
+                    
         
         
         
