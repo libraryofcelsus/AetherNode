@@ -185,7 +185,7 @@ async def process_requests():
             if llm_template == "Vicuna":
                 end_token = "ASSISTANT:"
                 prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
-                system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} ASSISTANT:"
+                system_prompt_prep = f"{item.system_prompt} USER: {username}: ASSISTANT:"
                 input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
@@ -203,7 +203,7 @@ async def process_requests():
             if llm_template == "Vicuna_No_End_Token":
                 end_token = "ASSISTANT:"
                 prompt_template = f"{item.system_prompt} USER: {username}: {item.prompt} "
-                system_prompt_prep = f"{item.system_prompt} USER: {username}: {item.prompt} "
+                system_prompt_prep = f"{item.system_prompt} USER: {username}: "
                 input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
@@ -218,13 +218,14 @@ async def process_requests():
                     input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
                     
+
                     
                     
-    # ChatML Format
+    # ChatML Format    
             if llm_template == "ChatML":
                 end_token = "<|im_end|>\n<|im_start|>assistant"
                 prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
-                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: <|im_end|>\n<|im_start|>assistant"
                 input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
@@ -234,15 +235,15 @@ async def process_requests():
                     truncated_input_ids = input_ids[:, -truncation_length:]
                     item.prompt = tokenizer.decode(truncated_input_ids)
                     prompt_overhang = True
-                    prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
-                    system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}<|im_end|>\n<|im_start|>assistant"
+                    prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt} [/INST]"
+                    system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: [/INST]"
                     input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
-        
-            if llm_template == "Vicuna_No_End_Token":
+                    
+            if llm_template == "Llama_2_Chat_No_End_Token":
                 end_token = "<|im_end|>\n<|im_start|>assistant"
                 prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
-                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: "
                 input_ids = tokenizer.encode(prompt_template)
                 prompt_template_length = input_ids.shape[-1]
                 
@@ -252,13 +253,10 @@ async def process_requests():
                     truncated_input_ids = input_ids[:, -truncation_length:]
                     item.prompt = tokenizer.decode(truncated_input_ids)
                     prompt_overhang = True
-                    prompt_template = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
-                    system_prompt_prep = f"<|im_start|>system\n{item.system_prompt}<|im_end|>\n<|im_start|>user\n{username}: {item.prompt}"
+                    prompt_template = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: {item.prompt}"
+                    system_prompt_prep = f"[INST] <<SYS>>\n{item.system_prompt}\n<</SYS>>\n{username}: "
                     input_ids = tokenizer.encode(prompt_template)
                     prompt_template_length = input_ids.shape[-1]
-                    
-                    
-        
         
         
         
